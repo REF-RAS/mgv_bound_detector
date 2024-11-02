@@ -1,0 +1,20 @@
+<launch>
+  <node name="bound_detector" pkg="mgv_bound_detector" type="bound_detector.py" respawn="false" output="screen">
+    <param name="laserscan_out_topic_name" value="/bound_detector/laser_scan "/>
+    <param name="collision_warn_topic_name" value="/bound_detector/collision_warn "/>
+    <!-- <param name="normal_map_topic" value="/bound_detector/normal_map"/>
+    <param name="normal_map_show" value="True"/> -->
+
+    <!-- <param name="bound_min_height" value="0.1" />
+    <param name="bound_max_pitch" value="0.1" />
+    <param name="bound_min_yaw" value="0.5" /> -->
+
+    <param name="laser_samples" value="240" />
+    <!-- <param name="laser_min_angle" value="-3.14" />     
+    <param name="laser_max_angle" value="3.14" />     
+    <param name="laser_range_min" value="1" />     
+    <param name="laser_range_max" value="10" /> 
+    <param name="update_rate" value="10" />   -->
+  </node>  
+
+</launch>
