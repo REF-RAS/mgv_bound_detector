@@ -7,12 +7,15 @@
 
 ## Introduction
 
-The Bound and Edge Detector is a ROS 1 node that is designed as a navigation aide for autonomous mobile ground vehicles moving aroudn in an experimental "sandbox". The node uses a front-mount depth camera to detect the walls of the sandbox and to estimate the distance. The wall interior surface is assumed to be vertical and perpendicular to the ground, within a range that can be specified as a parameter. 
+The Bound and Edge Detector is a ROS 1 node that is designed as a navigation aide for autonomous mobile ground vehicles moving around in an experimental "sandbox". The node uses a front-mount depth camera to detect the walls of the sandbox and to estimate the distance. The wall interior surface is assumed to be vertical and perpendicular to the ground, within a range that can be specified as a parameter. 
 
 ![Figure](docs/assets/LunarSandpit.png)
 
-The node requires a depth map from a RGBD camera, and the optional `CameraInfo`, as the input. The depth map is a regular pointcloud and the `CameraInfo` is for distortion correction, which improves the distance estimation accuracy when the wall is close. The node publishes a laser scan indicating the wall (i.e., the bound or the edge) that satisfies constraints of the minimum height, maximum pitch (the wall is not strictly vertical), and minimum yaw (the wall is at an angle to the line of sight). The node also publishes a floating point number that indicates the estimated nearly distance of the wall. If there are more than one wall in sight, the node will select the closer one.
+The node requires a depth map from a RGBD camera, and the optional `CameraInfo`, as the input. The depth map is a regular pointcloud and the `CameraInfo` is for distortion correction, which improves the distance estimation accuracy when the wall is close. The node publishes a laser scan indicating a wall (i.e., the bound or the edge) that satisfies conditions, namely the minimum height, and the unit normal vector of the detected object indicating a vectical surface. The latter is expressed as maximum pitch (the wall is not strictly vertical), and minimum yaw (the wall is at an angle to the line of sight). 
 
+The node also publishes a floating point number that indicates the estimated nearly distance of the wall. If there are more than one wall in sight, the node will select the closer one.
+
+Note: This package is yet to be tested on a real MGV at the lunar facility of QUT.
 
 ## ROS Integration
 
@@ -53,9 +56,10 @@ Note that `collision_warn_topic_name` outputs -1 if there is no wall nearby
 | Name | Default | Remarks |
 | ---- | ---- | ---- |
 | bound_min_height | 0.1 | The minimum height of the bound in meters |
-| bound_max_pitch | 0.1 | The max pitch allowed if a surface is considered as the bound (in gradient) |
-| bound_min_yaw | 0.5 | The min yaw allowed if a surface is considered as the bound (in gradient) |
+| bound_max_pitch | 0.1 | The max pitch allowed if a surface is considered as the bound (range 0 to 1 in a unit normal vector) |
+| bound_min_yaw | 0.5 | The min yaw allowed if a surface is considered as the bound (range 0 to 1 in a unit normal vector) |
 
+Note that a yaw of 0.0 in a unit normal vector is a surface that runs parallel to the line of sight and a yaw of 1.0 is a surface that is perpendicular to the line of sight.
 
 ### Parameters for the Output LaserScan
 
@@ -115,7 +119,7 @@ The Combiner parameters may be specified through keywords in the call to the con
     rospy.init_node(BoundDetector.NODE_NAME)
     try:
         rospy.loginfo(f'BoundDetector: The node "{BoundDetector.NODE_NAME}" is running')
-        robot_agent = BoundDetector(laser_samples=320, normal_map_topic=`/bound_detector/normal_map`)
+        robot_agent = BoundDetector(laser_samples=320, normal_map_topic_name=`/bound_detector/normal_map`)
         rospy.spin()
     except rospy.ROSInterruptException as e:
         rospy.logerr(e)
@@ -147,6 +151,11 @@ The node will wait for messages from the input sources if they are not already p
 
 ![Figure](docs/assets/MovementDemo.gif)
 
+## The Method
+
+The method adopted in the package is based on conventional object extraction by identifying the bound/wall based on its expected normal vector, which should have a pitch (angle) close to zero. The yaw (angle) 
+
+The method has not included modelling of the roll/pitch/yaw (RPY) of the mobile ground vehicle.  However, if such a model exists, it can be easily used to compensate for the mis-alignment of the depth camera. A suggested extention to this package is adding a subscriber to read the RPY from a ROS message stream and to use it in error correction of the normal map.
 
 ## Developer
 

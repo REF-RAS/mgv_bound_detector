@@ -41,10 +41,10 @@ class BoundDetector():
         self.normal_map_show = rospy.get_param('~normal_map_show', kwargs.get('normal_map_show', False ))  # whetner to display normal map in a window
         # self.normal_map_topic = '/bound_detector/normal_map'
         # self.normal_map_show = True
-        # parameters specifying the dimension of the edge/wall of the lunar sandpit             
+        # parameters specifying the height and the normal vector of the edge/wall of the lunar sandpit. The height is in meters. The normal of the wall is a unit vector.             
         self.bound_min_height = rospy.get_param('~bound_min_height', kwargs.get('bound_min_height', 0.10)) 
-        self.bound_max_pitch = rospy.get_param('~bound_max_pitch', kwargs.get('bound_max_pitch', 0.10)) 
-        self.bound_min_yaw = rospy.get_param('~bound_min_yaw', kwargs.get('bound_min_yaw', 0.50))        
+        self.bound_max_pitch = rospy.get_param('~bound_max_pitch', kwargs.get('bound_max_pitch', 0.10))  # between 0 and 1
+        self.bound_min_yaw = rospy.get_param('~bound_min_yaw', kwargs.get('bound_min_yaw', 0.50))        # between 0 and 1
         # parameters specifying the laser scan output
         self.laser_range_max = rospy.get_param('~laser_range_max', kwargs.get('laser_range_max', 100.0))  # the parameter is used as default value for background
         self.laser_range_min = rospy.get_param('~laser_range_min', kwargs.get('laser_range_min', 0.1))
@@ -160,15 +160,15 @@ class BoundDetector():
             return None, None
         # the depth array specifies the distance between objects in the scene and the camera
         depth_array_hbar, depth_bbox = CropTools.sample_image_hbar(depth_array, sample_size=0.5, sample_point_y=0.5) 
-        # compute the mean depth of the wall-like object along the x axis in the image space
+        # compute the mean depth of the wall-like object along the horizontal axis in the image space
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
             depth_array_hbar = np.nanmean(depth_array_hbar, where=bound_map_hbar, axis=0)
-        # compute the height of detected wall-like object along the x axis in the image space
+        # compute the height of detected wall-like object along the horizontal axis in the image space
         height_hbar_array = np.nan_to_num(np.count_nonzero(bound_map_hbar, axis=0), nan=0)
         height_hbar_array = (height_hbar_array * depth_array_hbar / self.camera_info.K[4]) # fy 
         x_in_world_squared = np.square(self.x_depth_ratio_array)
-        # print(depth_array_center_hbar)
+        # compute the distance array at each location along the horizontal axis
         distance_array_hbar = depth_array_hbar * np.sqrt(x_in_world_squared + 1)  # y is zero so excluded from the calculation 
         laser_range_array:np.ndarray = np.ones(self.laser_sample_n) * np.inf
         # a loop over numpy array here for index mapping and resolution, unless a more efficient method is found
@@ -176,7 +176,7 @@ class BoundDetector():
         # iterate through each angle of a laser scan
         for index, mapping_index in enumerate(self.depth_to_laser_mapping_list):
             mapping_index = laser_range_array.shape[0] - mapping_index
-        
+            # it tests if the direction represented by the index has a bound/wall satisfying the conditions (max pitch, min yaw and min height)
             if np.isnan(distance_array_hbar[index]) or np.isnan(height_hbar_array[index]) or height_hbar_array[index] < self.bound_min_height:
                 continue
             laser_range_array[mapping_index] = min(distance_array_hbar[index], laser_range_array[mapping_index])
@@ -186,6 +186,7 @@ class BoundDetector():
     def _process_depth_array(self, depth_array):
         depth_array = np.nan_to_num(depth_array, nan=self.laser_range_max + 1)
         self.normal_array_latest = DepthImageTools.get_surface_normal_by_depth(depth_array, self.camera_info_K)
+        # the normal vectors in normal array latest are unit vectors
         bound_map:np.ndarray = np.logical_and(np.logical_and(np.abs(self.normal_array_latest[:,:,1]) <= self.bound_max_pitch, 
                                                 self.normal_array_latest[:,:,2] >= self.bound_min_yaw), depth_array < self.laser_range_max)
         # compute laser scan output

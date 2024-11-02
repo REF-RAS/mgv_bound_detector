@@ -399,7 +399,7 @@ class DepthImageTools():
         :type depth_image: np.ndarray
         :param K: The camera intrinsic matrix of shape (3, 3) of float
         :type K: np.ndarray
-        :return: The normal map
+        :return: The normal map with the normal expressed as unit vector
         :rtype: np.ndarray
         """
         K = [[1, 0], [0, 1]] if K is None else K
