@@ -153,7 +153,9 @@ The node will wait for messages from the input sources if they are not already p
 
 ## The Method
 
-The method adopted in the package is based on conventional object extraction by identifying the bound/wall based on its expected normal vector, which should have a pitch (angle) close to zero. The yaw (angle) 
+The method adopted in the package is based on conventional object extraction by identifying the bound/wall based on its expected normal vector. The normal vectors are handled as unit vectors and so the range of its components (roll, pitch and yaw) are in the range 0 to 1.  A vertical bound/wall should have a pitch (component) close to zero. A vectical wall that blocks the way should also have a yaw (component) closer to 1.0. 
+
+The normal vectors of the latest depth map are computed regularly (at the update rate) for every location in the map. The normal vectors are filtered so that only those considered to be part of a vertical wall of a minimal height will remain. The height is estimated by the nunber of pixels along each column sharing a similar normal vector. Finally, The distance is computed using geometry based on the camera intrinsics.
 
 The method has not included modelling of the roll/pitch/yaw (RPY) of the mobile ground vehicle.  However, if such a model exists, it can be easily used to compensate for the mis-alignment of the depth camera. A suggested extention to this package is adding a subscriber to read the RPY from a ROS message stream and to use it in error correction of the normal map.
 
