@@ -145,7 +145,7 @@ roslaunch mgv_bound_detector default.launch
 ```
 The node will wait for messages from the input sources if they are not already publishing in the ROS environment.
 
-![Figure](docs/assets/MovementDemo.png)
+![Figure](docs/assets/MovementDemo.gif)
 
 
 ## Developer
